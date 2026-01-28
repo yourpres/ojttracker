@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>OJT Tracker Pro | Attendance System</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -16,7 +16,7 @@
                 <div class="auth-header">
                     <div class="logo-icon">📊</div>
                     <h1 id="auth-title">Welcome Back</h1>
-                    <p id="auth-subtitle">Please enter your details to sign in</p>
+                    <p id="auth-subtitle">Please sign in to continue</p>
                 </div>
 
                 <div id="login-fields">
@@ -31,7 +31,7 @@
                     <div class="auth-options">
                         <a href="#" id="btn-forgot-password">Forgot Password?</a>
                     </div>
-                    <button id="btn-login" class="btn btn-primary">🔑 Sign In to Dashboard</button>
+                    <button id="btn-login" class="btn btn-primary">🔑 Sign In</button>
                 </div>
 
                 <div id="signup-fields" class="hidden">
@@ -47,7 +47,7 @@
                         <label>Password</label>
                         <input type="password" id="signup-password" placeholder="Min. 6 characters">
                     </div>
-                    <button id="btn-signup" class="btn btn-primary">🚀 Create My Account</button>
+                    <button id="btn-signup" class="btn btn-primary">🚀 Create Account</button>
                 </div>
 
                 <div class="auth-footer">
@@ -55,14 +55,14 @@
                 </div>
             </div>
 
+            <!-- Password Reset View -->
             <div id="reset-fields" class="hidden">
                 <div class="auth-header">
                     <h1>Reset Password</h1>
-                    <p>Enter your email to receive a reset link</p>
                 </div>
                 <div class="input-group">
                     <label>Email Address</label>
-                    <input type="email" id="reset-email" placeholder="name@company.com">
+                    <input type="email" id="reset-email">
                 </div>
                 <button id="btn-send-reset" class="btn btn-primary">📩 Send Reset Link</button>
                 <div class="auth-footer">
@@ -74,6 +74,7 @@
 
     <!-- DASHBOARD WRAPPER -->
     <div id="app-content" class="hidden">
+        
         <nav class="top-nav">
             <div class="brand">OJT<span>Tracker</span></div>
             <div class="user-pill">
@@ -83,6 +84,7 @@
         </nav>
 
         <main class="main-content">
+            
             <div class="hero-clock">
                 <div class="clock-content">
                     <h1 id="live-time">00:00:00 AM</h1>
@@ -95,18 +97,19 @@
             <div id="student-section" class="hidden">
                 <div class="stats-row">
                     <div class="stat-box"><span>Status</span><h3 id="today-status">Ready</h3></div>
-                    <div class="stat-box"><span>Total Days</span><h3 id="total-days">0</h3></div>
-                    <div class="stat-box"><span>Total Hours</span><h3 id="total-hours">0.00</h3></div>
+                    <div class="stat-box"><span>Days</span><h3 id="total-days">0</h3></div>
+                    <div class="stat-box"><span>Hours</span><h3 id="total-hours">0.00</h3></div>
                 </div>
+
                 <div class="action-card">
-                    <h2 id="student-welcome-msg">Daily Attendance</h2>
+                    <h2 id="student-welcome-msg">Attendance</h2>
                     <div class="btn-group">
                         <button id="btn-time-in" class="btn btn-success">🕒 Time In</button>
                         <button id="btn-time-out" class="btn btn-danger" disabled>🚪 Time Out</button>
                     </div>
                 </div>
+
                 <div class="table-card">
-                    <h3>My Attendance History</h3>
                     <div class="table-responsive">
                         <table>
                             <thead><tr><th>Date</th><th>In</th><th>Out</th><th>Total</th></tr></thead>
@@ -119,17 +122,18 @@
             <!-- ADMIN SECTION -->
             <div id="admin-section" class="hidden">
                 <div class="admin-header">
-                    <div class="admin-controls">
-                        <h2>Student Monitoring</h2>
-                        <input type="text" id="admin-search" placeholder="Search name or email..." class="search-input">
-                    </div>
-                    <button id="btn-export-excel" class="btn btn-primary">📥 Export Visible Rows (CSV)</button>
+                    <h2>Monitoring</h2>
+                    <button id="btn-export-excel" class="btn btn-primary btn-sm">📥 Export CSV</button>
+                </div>
+
+                <div class="search-box">
+                    <input type="text" id="admin-search" placeholder="Search name or email..." class="search-input">
                 </div>
 
                 <div class="action-card manual-form">
-                    <h3>Manual Attendance Entry</h3>
+                    <h3>Manual Entry</h3>
                     <div class="grid-form">
-                        <input type="email" id="manual-email" placeholder="Student Email">
+                        <input type="email" id="manual-email" placeholder="Email">
                         <input type="date" id="manual-date">
                         <input type="time" id="manual-time-in">
                         <input type="time" id="manual-time-out">
@@ -143,7 +147,7 @@
                             <thead>
                                 <tr>
                                     <th>Student</th>
-                                    <th>Status Control</th>
+                                    <th>Status</th>
                                     <th>Date</th>
                                     <th>In</th>
                                     <th>Out</th>

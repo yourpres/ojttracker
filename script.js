@@ -2,7 +2,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebas
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { getDatabase, ref, set, update, get, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-// --- FIREBASE CONFIGURATION ---
+// --- FIREBASE CONFIG ---
 const firebaseConfig = {
     apiKey: "AIzaSyAessffdBaG653iPfoCJYEG4_-h7fx8Wx4",
     authDomain: "ojt-attendance-system-1d346.firebaseapp.com",
@@ -17,14 +17,13 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getDatabase(app);
 
-// Role & DOM Elements
-const ADMIN_EMAIL = "admin@test.com"; 
+const ADMIN_EMAIL = "admin@test.com";
 const authCont = document.getElementById('auth-container');
 const appCont = document.getElementById('app-content');
 const studentSec = document.getElementById('student-section');
 const adminSec = document.getElementById('admin-section');
 
-// 1. AUTH LOGIC
+// --- AUTH UI LOGIC ---
 let isLoginMode = true;
 document.getElementById('btn-toggle-auth').onclick = (e) => {
     e.preventDefault();
@@ -65,42 +64,49 @@ document.getElementById('btn-signup').onclick = async () => {
 
 document.getElementById('btn-send-reset').onclick = async () => {
     const e = document.getElementById('reset-email').value;
-    try { await sendPasswordResetEmail(auth, e); alert("Reset link sent to email!"); } catch (err) { alert(err.message); }
+    try { await sendPasswordResetEmail(auth, e); alert("Reset link sent!"); } catch (err) { alert(err.message); }
 };
 
+// --- LOGOUT Logic (Fixed) ---
 document.getElementById('btn-logout').onclick = () => signOut(auth);
 
-// 2. STATE MANAGEMENT
+// --- STATE MANAGEMENT ---
 onAuthStateChanged(auth, async (user) => {
-    authCont.classList.add('hidden'); appCont.classList.add('hidden');
-    studentSec.classList.add('hidden'); adminSec.classList.add('hidden');
+    authCont.classList.add('hidden'); 
+    appCont.classList.add('hidden');
+    studentSec.classList.add('hidden'); 
+    adminSec.classList.add('hidden');
 
     if (user) {
         appCont.classList.remove('hidden');
         if (user.email === ADMIN_EMAIL) {
             adminSec.classList.remove('hidden');
-            document.getElementById('display-user-name').innerText = "Administrator";
+            document.getElementById('display-user-name').innerText = "Admin";
             loadAdminData();
         } else {
             studentSec.classList.remove('hidden');
             const snap = await get(ref(db, `users/${user.uid}/profile`));
-            const data = snap.val();
-            document.getElementById('display-user-name').innerText = data?.name || "Student";
+            const profile = snap.val();
+            document.getElementById('display-user-name').innerText = profile?.name || "Student";
             
-            // SECURITY: Check if user is inactive
-            if(data?.status === 'inactive') {
+            if(profile?.status === 'inactive') {
                 document.getElementById('btn-time-in').disabled = true;
-                document.getElementById('btn-time-out').disabled = true;
-                document.getElementById('today-status').innerText = "Access Revoked";
-                document.getElementById('student-welcome-msg').innerText = "Account Inactive - Contact Admin";
+                document.getElementById('student-welcome-msg').innerText = "ACCOUNT INACTIVE";
+                document.getElementById('student-welcome-msg').style.color = "red";
             } else {
+                document.getElementById('student-welcome-msg').innerText = "Attendance";
+                document.getElementById('student-welcome-msg').style.color = "inherit";
                 loadStudentData(user.uid);
             }
         }
-    } else { authCont.classList.remove('hidden'); }
+    } else { 
+        authCont.classList.remove('hidden'); 
+        document.getElementById('login-email').value = "";
+        document.getElementById('login-password').value = "";
+    }
 });
 
-// 3. STUDENT ATTENDANCE LOGIC
+// --- STUDENT LOGIC ---
 document.getElementById('btn-time-in').onclick = async () => {
     const u = auth.currentUser;
     const d = new Date().toISOString().split('T')[0];
@@ -136,58 +142,47 @@ async function loadStudentData(uid) {
             if (r.date === today) {
                 document.getElementById('btn-time-in').disabled = true;
                 document.getElementById('btn-time-out').disabled = !!r.timeOut;
-                document.getElementById('today-status').innerText = r.timeOut ? "Finished" : "Clocked In";
+                document.getElementById('today-status').innerText = r.timeOut ? "Finished" : "Active";
             }
-            list.innerHTML += `<tr><td>${r.date}</td><td>${r.timeIn}</td><td>${r.timeOut || '--'}</td><td>${r.hours} hrs</td></tr>`;
+            list.innerHTML += `<tr><td>${r.date}</td><td>${r.timeIn}</td><td>${r.timeOut || '--'}</td><td>${r.hours}h</td></tr>`;
         });
     }
     document.getElementById('total-hours').innerText = th.toFixed(2);
     document.getElementById('total-days').innerText = td;
 }
 
-// 4. ADMIN LOGIC (Search, Deletion, Status Toggle, Selective Export)
+// --- ADMIN FEATURES (Search, Toggle, Delete, Targeted Export) ---
 async function loadAdminData(searchQuery = "") {
     const snap = await get(ref(db, `users`));
     const list = document.getElementById('admin-list'); 
     list.innerHTML = "";
     
     if (snap.exists()) {
-        const allUsers = snap.val();
-        for (let uid in allUsers) {
-            const profile = allUsers[uid].profile || {};
-            const attendance = allUsers[uid].attendance;
+        const users = snap.val();
+        for (let uid in users) {
+            const profile = users[uid].profile || {};
+            const att = users[uid].attendance;
             const name = profile.name || "Unknown";
-            const email = profile.email || "No Email";
+            const email = profile.email || "";
             const status = profile.status || 'active';
 
-            // Filter logic
-            if (searchQuery && !name.toLowerCase().includes(searchQuery.toLowerCase()) && !email.toLowerCase().includes(searchQuery.toLowerCase())) {
-                continue;
-            }
+            if (searchQuery && !name.toLowerCase().includes(searchQuery.toLowerCase()) && !email.toLowerCase().includes(searchQuery.toLowerCase())) continue;
 
-            if (attendance) {
-                for (let date in attendance) {
-                    const r = attendance[date];
+            if (att) {
+                for (let date in att) {
+                    const r = att[date];
                     const row = document.createElement('tr');
                     row.innerHTML = `
-                        <td>
-                            <div style="font-weight:700">${name}</div>
-                            <div style="font-size:0.75rem; color:var(--text-light)">${email}</div>
-                        </td>
+                        <td><div style="font-weight:800">${name}</div><div style="font-size:0.7rem; color:gray">${email}</div></td>
                         <td>
                             <label class="switch">
-                                <input type="checkbox" class="status-toggle" data-uid="${uid}" ${status === 'active' ? 'checked' : ''}>
+                                <input type="checkbox" class="status-tog" data-uid="${uid}" ${status === 'active' ? 'checked' : ''}>
                                 <span class="slider"></span>
                             </label>
-                            <span class="status-label ${status === 'active' ? 'status-active' : 'status-inactive'}">${status.toUpperCase()}</span>
+                            <span class="status-label ${status === 'active' ? 'active-txt' : 'inactive-txt'}">${status.toUpperCase()}</span>
                         </td>
-                        <td>${r.date}</td>
-                        <td>${r.timeIn}</td>
-                        <td>${r.timeOut || '--'}</td>
-                        <td>${r.hours}</td>
-                        <td>
-                            <button class="btn-delete" data-uid="${uid}" data-date="${date}">Delete</button>
-                        </td>
+                        <td>${r.date}</td><td>${r.timeIn}</td><td>${r.timeOut || '--'}</td><td>${r.hours}</td>
+                        <td><button class="btn-delete" data-uid="${uid}" data-date="${date}">DEL</button></td>
                     `;
                     list.appendChild(row);
                 }
@@ -198,58 +193,36 @@ async function loadAdminData(searchQuery = "") {
 }
 
 function attachAdminEvents() {
-    // Specific Row Deletion
     document.querySelectorAll('.btn-delete').forEach(btn => {
         btn.onclick = async (e) => {
-            const uid = e.target.dataset.uid;
-            const date = e.target.dataset.date;
-            if(confirm(`Permanently delete record for ${date}?`)) {
-                await remove(ref(db, `users/${uid}/attendance/${date}`));
+            if(confirm("Delete record?")) {
+                await remove(ref(db, `users/${e.target.dataset.uid}/attendance/${e.target.dataset.date}`));
                 loadAdminData(document.getElementById('admin-search').value);
             }
         };
     });
 
-    // Tracking Status Toggle (Active/Inactive)
-    document.querySelectorAll('.status-toggle').forEach(toggle => {
-        toggle.onchange = async (e) => {
-            const uid = e.target.dataset.uid;
+    document.querySelectorAll('.status-tog').forEach(tog => {
+        tog.onchange = async (e) => {
             const newStatus = e.target.checked ? 'active' : 'inactive';
-            await update(ref(db, `users/${uid}/profile`), { status: newStatus });
+            await update(ref(db, `users/${e.target.dataset.uid}/profile`), { status: newStatus });
             loadAdminData(document.getElementById('admin-search').value);
         };
     });
 }
 
-// Live Search logic
-document.getElementById('admin-search').addEventListener('input', (e) => {
-    loadAdminData(e.target.value);
-});
+document.getElementById('admin-search').addEventListener('input', (e) => loadAdminData(e.target.value));
 
-// CSV Export (Exports only what is currently visible in the table)
 document.getElementById('btn-export-excel').onclick = () => {
-    let csv = "Student,Email,Status,Date,Time In,Time Out,Hours\n";
-    const rows = document.querySelectorAll("#admin-list tr");
-    
-    if(rows.length === 0) return alert("No results visible to export.");
-
-    rows.forEach(row => {
+    let csv = "Student,Email,Status,Date,In,Out,Hrs\n";
+    document.querySelectorAll("#admin-list tr").forEach(row => {
         const cells = row.querySelectorAll("td");
-        const name = cells[0].querySelector("div").innerText;
-        const email = cells[0].querySelectorAll("div")[1].innerText;
-        const status = cells[1].innerText.trim();
-        const date = cells[2].innerText;
-        const tIn = cells[3].innerText;
-        const tOut = cells[4].innerText;
-        const hrs = cells[5].innerText;
-        
-        csv += `"${name}","${email}","${status}","${date}","${tIn}","${tOut}","${hrs}"\n`;
+        csv += `"${cells[0].querySelector("div").innerText}","${cells[0].querySelectorAll("div")[1].innerText}","${cells[1].innerText.trim()}","${cells[2].innerText}","${cells[3].innerText}","${cells[4].innerText}","${cells[5].innerText}"\n`;
     });
-
     const blob = new Blob([csv], { type: 'text/csv' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `OJT_Monitoring_Report_${new Date().toISOString().split('T')[0]}.csv`;
+    a.download = `Report_${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
 };
 
@@ -258,24 +231,22 @@ document.getElementById('btn-manual-save').onclick = async () => {
     const date = document.getElementById('manual-date').value;
     const tIn = document.getElementById('manual-time-in').value;
     const tOut = document.getElementById('manual-time-out').value;
-    
     const snap = await get(ref(db, `users`)); 
     let target = null;
     for (let u in snap.val()) if (snap.val()[u].profile?.email === email) target = u;
-
     if (target) {
         await set(ref(db, `users/${target}/attendance/${date}`), { date, timeIn: tIn, timeOut: tOut, hours: 8 });
-        alert("Record added successfully!"); loadAdminData();
-    } else { alert("User not found!"); }
+        alert("Done!"); loadAdminData();
+    } else { alert("Not found"); }
 };
 
-// 5. LIVE HERO CLOCK
+// --- CLOCK ---
 function startClock() {
     setInterval(() => {
         const now = new Date();
         document.getElementById('live-time').innerText = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
-        document.getElementById('live-day').innerText = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][now.getDay()];
-        document.getElementById('live-date').innerText = now.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+        document.getElementById('live-day').innerText = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][now.getDay()];
+        document.getElementById('live-date').innerText = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     }, 1000);
 }
 startClock();
