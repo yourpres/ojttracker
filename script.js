@@ -423,6 +423,8 @@ document.getElementById('btn-update-admin-name').onclick = async () => {
 };
 
 // --- ADMIN CORE ---
+let allUsersData = {}; // Store all users data for searching
+
 function loadAdminMaster() {
     onValue(ref(db, `users`), (snap) => {
         const masterList = document.getElementById('admin-master-list');
@@ -433,6 +435,9 @@ function loadAdminMaster() {
         const users = snap.val();
         if (!users) return;
         
+        // Store all users data for search functionality
+        allUsersData = {};
+        
         for (let uid in users) {
             const p = users[uid].profile;
             if (!p || p.email === ADMIN_EMAIL) continue;
@@ -441,44 +446,164 @@ function loadAdminMaster() {
             const tDays = Object.keys(att).length;
             const tHrs = Object.values(att).reduce((s, r) => s + (r.hours || 0), 0);
 
-            // Masters list
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td class="clickable-name" onclick="openDetail('${uid}')">
-                    <strong>${p.name}</strong><br>
-                    <small>${p.email}</small>
-                </td>
-                <td>${tDays}</td>
-                <td>${tHrs.toFixed(2)}h</td>
-                <td>
-                    <button class="btn btn-primary btn-sm" onclick="openDetail('${uid}')">
-                        <i class="fas fa-eye"></i> View Logs
-                    </button>
-                </td>
-            `;
-            masterList.appendChild(row);
-
-            // Mgmt List
-            mgmtList.innerHTML += `
-                <tr>
-                    <td>${p.name}</td>
-                    <td>${p.email}</td>
-                    <td>
-                        <label class="switch">
-                            <input type="checkbox" onchange="updateUserStatus('${uid}', this.checked)" ${p.status === 'active' ? 'checked' : ''}>
-                            <span class="slider"></span>
-                        </label>
-                    </td>
-                    <td>
-                        <button class="btn btn-danger btn-sm" onclick="deleteUser('${uid}')">
-                            <i class="fas fa-trash"></i> Delete
-                        </button>
-                    </td>
-                </tr>
-            `;
+            // Store user data
+            allUsersData[uid] = {
+                name: p.name,
+                email: p.email,
+                status: p.status,
+                days: tDays,
+                hours: tHrs
+            };
         }
+        
+        // Initial render
+        renderAdminLists();
     });
 }
+
+function renderAdminLists(searchTerm = '') {
+    const masterList = document.getElementById('admin-master-list');
+    const mgmtList = document.getElementById('mgmt-table-body');
+    masterList.innerHTML = "";
+    mgmtList.innerHTML = "";
+    
+    const lowerSearch = searchTerm.toLowerCase().trim();
+    let foundCount = 0;
+    
+    for (let uid in allUsersData) {
+        const user = allUsersData[uid];
+        
+        // Filter by search term
+        if (lowerSearch && 
+            !user.name.toLowerCase().includes(lowerSearch) && 
+            !user.email.toLowerCase().includes(lowerSearch)) {
+            continue;
+        }
+        
+        foundCount++;
+        
+        // Highlight matching text
+        const highlightedName = highlightText(user.name, searchTerm);
+        const highlightedEmail = highlightText(user.email, searchTerm);
+        
+        // Masters list
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td class="clickable-name" onclick="openDetail('${uid}')">
+                <strong>${highlightedName}</strong><br>
+                <small>${highlightedEmail}</small>
+            </td>
+            <td>${user.days}</td>
+            <td>${user.hours.toFixed(2)}h</td>
+            <td>
+                <button class="btn btn-primary btn-sm" onclick="openDetail('${uid}')">
+                    <i class="fas fa-eye"></i> View Logs
+                </button>
+            </td>
+        `;
+        masterList.appendChild(row);
+
+        // Mgmt List
+        const mgmtRow = document.createElement('tr');
+        mgmtRow.innerHTML = `
+            <td>${highlightedName}</td>
+            <td>${highlightedEmail}</td>
+            <td>
+                <label class="switch">
+                    <input type="checkbox" onchange="updateUserStatus('${uid}', this.checked)" ${user.status === 'active' ? 'checked' : ''}>
+                    <span class="slider"></span>
+                </label>
+            </td>
+            <td>
+                <button class="btn btn-danger btn-sm" onclick="deleteUser('${uid}')">
+                    <i class="fas fa-trash"></i> Delete
+                </button>
+            </td>
+        `;
+        mgmtList.appendChild(mgmtRow);
+    }
+    
+    // Show "no results" message if nothing found
+    if (foundCount === 0 && lowerSearch) {
+        masterList.innerHTML = `
+            <tr>
+                <td colspan="4">
+                    <div class="no-results">
+                        <i class="fas fa-search"></i>
+                        <h3>No students found</h3>
+                        <p>Try searching with a different name or email</p>
+                    </div>
+                </td>
+            </tr>
+        `;
+        
+        mgmtList.innerHTML = `
+            <tr>
+                <td colspan="4">
+                    <div class="no-results">
+                        <i class="fas fa-search"></i>
+                        <h3>No students found</h3>
+                        <p>Try searching with a different name or email</p>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }
+}
+
+// Function to highlight matching text
+function highlightText(text, search) {
+    if (!search || !search.trim()) return text;
+    
+    const regex = new RegExp(`(${search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+    return text.replace(regex, '<span class="highlight">$1</span>');
+}
+
+// Search functionality for admin dashboard
+const adminSearchInput = document.getElementById('admin-search');
+const clearSearchBtn = document.getElementById('clear-search');
+
+adminSearchInput.addEventListener('input', (e) => {
+    const searchTerm = e.target.value;
+    renderAdminLists(searchTerm);
+    
+    // Show/hide clear button
+    if (searchTerm.trim()) {
+        clearSearchBtn.classList.remove('hidden');
+    } else {
+        clearSearchBtn.classList.add('hidden');
+    }
+});
+
+clearSearchBtn.addEventListener('click', () => {
+    adminSearchInput.value = '';
+    clearSearchBtn.classList.add('hidden');
+    renderAdminLists('');
+    adminSearchInput.focus();
+});
+
+// Search functionality for manage users page
+const mgmtSearchInput = document.getElementById('mgmt-search');
+const clearMgmtSearchBtn = document.getElementById('clear-mgmt-search');
+
+mgmtSearchInput.addEventListener('input', (e) => {
+    const searchTerm = e.target.value;
+    renderAdminLists(searchTerm);
+    
+    // Show/hide clear button
+    if (searchTerm.trim()) {
+        clearMgmtSearchBtn.classList.remove('hidden');
+    } else {
+        clearMgmtSearchBtn.classList.add('hidden');
+    }
+});
+
+clearMgmtSearchBtn.addEventListener('click', () => {
+    mgmtSearchInput.value = '';
+    clearMgmtSearchBtn.classList.add('hidden');
+    renderAdminLists('');
+    mgmtSearchInput.focus();
+});
 
 window.openDetail = async (uid) => {
     currentEditingUserId = uid;
