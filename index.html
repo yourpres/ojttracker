@@ -3,20 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>OJT Tracker Pro | Attendance System</title>
+    <title>OJT Tracker Pro | Senior Edition</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body>
 
-    <!-- AUTHENTICATION SECTION -->
+    <div id="loader-overlay" class="loader-overlay hidden">
+        <div class="loader"></div>
+    </div>
+
+    <!-- AUTH SECTION -->
     <div id="auth-container" class="auth-wrapper">
         <div class="auth-card">
-            <div id="login-signup-view">
+            <!-- Login/Signup View -->
+            <div id="auth-main-view">
                 <div class="auth-header">
                     <div class="logo-icon">📊</div>
                     <h1 id="auth-title">Welcome Back</h1>
-                    <p id="auth-subtitle">Please sign in to continue</p>
+                    <p>OJT Attendance Management System</p>
                 </div>
 
                 <div id="login-fields">
@@ -29,9 +35,9 @@
                         <input type="password" id="login-password" placeholder="••••••••">
                     </div>
                     <div class="auth-options">
-                        <a href="#" id="btn-forgot-password">Forgot Password?</a>
+                        <a href="#" id="btn-show-forgot">Forgot Password?</a>
                     </div>
-                    <button id="btn-login" class="btn btn-primary">🔑 Sign In</button>
+                    <button id="btn-login" class="btn btn-primary">🔒 Sign In</button>
                 </div>
 
                 <div id="signup-fields" class="hidden">
@@ -55,14 +61,15 @@
                 </div>
             </div>
 
-            <!-- Password Reset View -->
-            <div id="reset-fields" class="hidden">
+            <!-- Forgot Password View -->
+            <div id="forgot-password-view" class="hidden">
                 <div class="auth-header">
                     <h1>Reset Password</h1>
+                    <p>Enter your email to receive a reset link</p>
                 </div>
                 <div class="input-group">
                     <label>Email Address</label>
-                    <input type="email" id="reset-email">
+                    <input type="email" id="forgot-email" placeholder="name@company.com">
                 </div>
                 <button id="btn-send-reset" class="btn btn-primary">📩 Send Reset Link</button>
                 <div class="auth-footer">
@@ -72,40 +79,85 @@
         </div>
     </div>
 
-    <!-- DASHBOARD WRAPPER -->
+    <!-- APP CONTENT -->
     <div id="app-content" class="hidden">
+        <!-- Mobile Backdrop -->
+        <div class="mobile-backdrop" id="mobile-backdrop"></div>
         
-        <nav class="top-nav">
-            <div class="brand">OJT<span>Tracker</span></div>
-            <div class="user-pill">
-                <span id="display-user-name">User</span>
-                <button id="btn-logout" class="btn-logout">Logout</button>
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-resize-handle" id="sidebar-resize-handle"></div>
+            <div class="sidebar-header">
+                <div class="brand">OJT<span>Tracker</span></div>
+                <button id="sidebar-toggle" class="sidebar-toggle-btn" title="Toggle sidebar width">
+                    <i class="fas fa-angles-left"></i>
+                </button>
+                <button id="mobile-close" class="mobile-only">✕</button>
             </div>
-        </nav>
+            <nav class="side-nav">
+                <div id="student-nav" class="nav-group">
+                    <button class="nav-link active" data-view="student-dashboard">
+                        <i class="fas fa-home"></i>
+                        <span class="nav-text">Dashboard</span>
+                    </button>
+                    <button class="nav-link" data-view="student-profile">
+                        <i class="fas fa-user"></i>
+                        <span class="nav-text">My Profile</span>
+                    </button>
+                </div>
+                <div id="admin-nav" class="nav-group hidden">
+                    <button class="nav-link active" data-view="admin-dashboard">
+                        <i class="fas fa-chart-line"></i>
+                        <span class="nav-text">Monitoring</span>
+                    </button>
+                    <button class="nav-link" data-view="admin-manage-users">
+                        <i class="fas fa-users"></i>
+                        <span class="nav-text">Manage Students</span>
+                    </button>
+                    <button class="nav-link" data-view="admin-profile">
+                        <i class="fas fa-user-shield"></i>
+                        <span class="nav-text">Admin Profile</span>
+                    </button>
+                </div>
+                <button id="btn-logout" class="nav-link logout-link">
+                    <i class="fas fa-right-from-bracket"></i>
+                    <span class="nav-text">Logout</span>
+                </button>
+            </nav>
+        </aside>
 
-        <main class="main-content">
-            
+        <!-- Main Body -->
+        <main class="main-content" id="main-content">
+            <header class="top-bar">
+                <button id="mobile-menu-toggle" class="mobile-only">☰</button>
+                <h2 id="view-title">Dashboard</h2>
+                <div class="user-pill">
+                    <img id="nav-avatar" src="https://via.placeholder.com/40" class="avatar-sm">
+                    <span id="display-user-name">User</span>
+                </div>
+            </header>
+
+            <!-- SHARED CLOCK COMPONENT -->
             <div class="hero-clock">
-                <div class="clock-content">
-                    <h1 id="live-time">00:00:00 AM</h1>
-                    <p><span id="live-day">Monday</span>, <span id="live-date">January 01, 2024</span></p>
+                <div class="clock-data">
+                    <h1 class="live-time">00:00:00 AM</h1>
+                    <p class="live-date">January 01, 2024</p>
                 </div>
                 <div class="clock-icon">🕒</div>
             </div>
 
-            <!-- STUDENT SECTION -->
-            <div id="student-section" class="hidden">
-                <div class="stats-row">
+            <!-- STUDENT VIEW -->
+            <div id="student-dashboard" class="view-container">
+                <div class="stats-grid">
                     <div class="stat-box"><span>Status</span><h3 id="today-status">Ready</h3></div>
                     <div class="stat-box"><span>Days</span><h3 id="total-days">0</h3></div>
-                    <div class="stat-box"><span>Hours</span><h3 id="total-hours">0.00</h3></div>
+                    <div class="stat-box"><span>Total Hours</span><h3 id="total-hours">0.00</h3></div>
                 </div>
 
                 <div class="action-card">
-                    <h2 id="student-welcome-msg">Attendance</h2>
-                    <div class="btn-group">
-                        <button id="btn-time-in" class="btn btn-success">🕒 Time In</button>
-                        <button id="btn-time-out" class="btn btn-danger" disabled>🚪 Time Out</button>
+                    <div class="button-grid">
+                        <button id="btn-time-in" class="btn btn-success">Time In</button>
+                        <button id="btn-time-out" class="btn btn-danger" disabled>Time Out</button>
                     </div>
                 </div>
 
@@ -119,48 +171,139 @@
                 </div>
             </div>
 
-            <!-- ADMIN SECTION -->
-            <div id="admin-section" class="hidden">
-                <div class="admin-header">
-                    <h2>Monitoring</h2>
-                    <button id="btn-export-excel" class="btn btn-primary btn-sm">📥 Export CSV</button>
+            <!-- STUDENT PROFILE -->
+            <div id="student-profile" class="view-container hidden">
+                <div class="profile-card">
+                    <div class="profile-avatar-wrapper">
+                        <img id="profile-img" src="https://via.placeholder.com/150">
+                        <label for="img-upload" class="upload-badge">📸</label>
+                        <input type="file" id="img-upload" hidden accept="image/*">
+                    </div>
+                    <h2 id="prof-name">Student Name</h2>
+                    <p id="prof-email">email@test.com</p>
                 </div>
+            </div>
 
-                <div class="search-box">
-                    <input type="text" id="admin-search" placeholder="Search name or email..." class="search-input">
+            <!-- ADMIN PROFILE -->
+            <div id="admin-profile" class="view-container hidden">
+                <div class="profile-card">
+                    <div class="profile-avatar-wrapper">
+                        <img id="admin-profile-img" src="https://via.placeholder.com/150">
+                        <label for="admin-img-upload" class="upload-badge">📸</label>
+                        <input type="file" id="admin-img-upload" hidden accept="image/*">
+                    </div>
+                    <h2 id="admin-prof-name">Administrator</h2>
+                    <p id="admin-prof-email">admin@test.com</p>
+                    <div class="input-group" style="margin-top: 2rem;">
+                        <label>Display Name</label>
+                        <input type="text" id="admin-name-input" placeholder="Enter admin name">
+                        <button id="btn-update-admin-name" class="btn btn-primary" style="margin-top: 1rem;">Update Name</button>
+                    </div>
                 </div>
+            </div>
 
-                <div class="action-card manual-form">
-                    <h3>Manual Entry</h3>
-                    <div class="grid-form">
-                        <input type="email" id="manual-email" placeholder="Email">
-                        <input type="date" id="manual-date">
-                        <input type="time" id="manual-time-in">
-                        <input type="time" id="manual-time-out">
-                        <button id="btn-manual-save" class="btn btn-success">Add Record</button>
+            <!-- ADMIN DASHBOARD -->
+            <div id="admin-dashboard" class="view-container hidden">
+                <div class="table-card">
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Student</th>
+                                    <th>Days</th>
+                                    <th>Total Hours</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-master-list"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ADMIN DETAIL VIEW -->
+            <div id="admin-detail-view" class="view-container hidden">
+                <div class="detail-nav">
+                    <button id="btn-close-detail" class="btn-back"><i class="fas fa-arrow-left"></i> Back to Master List</button>
+                    <div class="detail-actions">
+                        <button id="btn-add-manual-log" class="btn btn-success btn-sm"><i class="fas fa-plus"></i> Add Log</button>
+                        <button id="btn-export-csv" class="btn btn-primary btn-sm"><i class="fas fa-download"></i> Export CSV</button>
+                    </div>
+                </div>
+                
+                <div class="detail-hero">
+                    <div>
+                        <h2 id="det-name">Student Name</h2>
+                        <p id="det-email">student@test.com</p>
+                    </div>
+                    <div class="cumulative-box">
+                        <span>Cumulative Hours</span>
+                        <h1 id="det-total-hrs">0.00</h1>
                     </div>
                 </div>
 
                 <div class="table-card">
                     <div class="table-responsive">
-                        <table id="admin-table">
+                        <table>
                             <thead>
                                 <tr>
-                                    <th>Student</th>
-                                    <th>Status</th>
                                     <th>Date</th>
-                                    <th>In</th>
-                                    <th>Out</th>
+                                    <th>Time In</th>
+                                    <th>Time Out</th>
                                     <th>Hrs</th>
-                                    <th>Action</th>
+                                    <th>Actions</th>
                                 </tr>
                             </thead>
-                            <tbody id="admin-list"></tbody>
+                            <tbody id="det-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ADMIN USER MGMT -->
+            <div id="admin-manage-users" class="view-container hidden">
+                <div class="table-card">
+                    <div class="table-responsive">
+                        <table>
+                            <thead><tr><th>Student</th><th>Email</th><th>Status</th><th>Action</th></tr></thead>
+                            <tbody id="mgmt-table-body"></tbody>
                         </table>
                     </div>
                 </div>
             </div>
         </main>
+    </div>
+
+    <!-- MODAL FOR ADDING/EDITING LOGS -->
+    <div id="log-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">Add Attendance Log</h2>
+                <button id="modal-close" class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="input-group">
+                    <label>Date</label>
+                    <input type="date" id="log-date">
+                </div>
+                <div class="input-group">
+                    <label>Time In</label>
+                    <input type="time" id="log-time-in">
+                </div>
+                <div class="input-group">
+                    <label>Time Out</label>
+                    <input type="time" id="log-time-out">
+                </div>
+                <div class="input-group">
+                    <label>Hours (Auto-calculated)</label>
+                    <input type="number" id="log-hours" step="0.01" readonly>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="btn-cancel-log" class="btn btn-secondary">Cancel</button>
+                <button id="btn-save-log" class="btn btn-primary">Save Log</button>
+            </div>
+        </div>
     </div>
 
     <script type="module" src="script.js"></script>
